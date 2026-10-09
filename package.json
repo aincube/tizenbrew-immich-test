@@ -1,9 +1,11 @@
 {
-  "name": "tizenbrew-immich-test",
-  "version": "0.1.0",
+  "name": "tizenbrew-immich-slideshow",
+  "version": "0.2.0",
+  "description": "Immich slideshow for the Samsung TV through slideshow.roiest.nu",
+  "license": "MIT",
   "packageType": "mods",
-  "appName": "Immich test",
-  "websiteURL": "https://immich.roiest.nu",
+  "appName": "Immich slideshow",
+  "websiteURL": "https://slideshow.roiest.nu/api/server/ping",
   "main": "main.js",
-  "keys": []
+  "keys": ["MediaPlay", "MediaPause", "MediaStop"]
 }
