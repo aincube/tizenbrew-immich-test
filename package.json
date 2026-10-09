@@ -1,0 +1,9 @@
+{
+  "name": "tizenbrew-immich-test",
+  "version": "0.1.0",
+  "packageType": "mods",
+  "appName": "Immich test",
+  "websiteURL": "https://immich.roiest.nu",
+  "main": "main.js",
+  "keys": []
+}
