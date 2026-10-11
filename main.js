@@ -2,9 +2,8 @@
 // internal reverse proxy adds the Immich key. ES5 only: the TV (Tizen 4.0) runs an
 // old Chromium without module scripts. The slideshow logic follows SamGal by Marco Dondero (MIT), github.com/emdioh/samgal.
 (function () {
-  var ALBUM_ID = '';        // empty: random photos from the whole library
+  var ALBUM_ID = '2df2d381-ff58-424a-8e60-cd95eaab7835';
   var SECONDS = 12;
-  var BATCH = 200;          // photos per fetch; a new batch is fetched when one runs out
   var KEYS = { LEFT: 37, RIGHT: 39, OK: 13, BACK: 10009, PLAY: 415, PAUSE: 19, STOP: 413 };
 
   document.documentElement.innerHTML =
@@ -20,27 +19,33 @@
   var caption = document.getElementById('c'), msg = document.getElementById('m');
   var photos = [], index = -1, timer = null, paused = false;
 
-  function api(path, body) {
-    var opts = body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {};
-    return fetch('/api' + path, opts).then(function (r) {
+  function api(path) {
+    return fetch('/api' + path).then(function (r) {
       if (!r.ok) throw new Error('Immich ' + r.status + ' on ' + path);
       return r;
     });
   }
 
-  function images(assets) {
-    return assets.filter(function (a) { return a.type === 'IMAGE'; }).map(function (a) {
-      var d = a.localDateTime || a.fileCreatedAt;
-      return { id: a.id, caption: d ? d.slice(0, 10) : '' };
-    });
+  // Immich 3.3 returns an album's assets only through the timeline: a list of month buckets, then one column-wise bucket each.
+  function images(b) {
+    var out = [];
+    for (var i = 0; i < b.id.length; i++) {
+      if (b.isImage[i] && !b.isTrashed[i]) out.push({ id: b.id[i], caption: (b.fileCreatedAt[i] || '').slice(0, 10) });
+    }
+    return out;
   }
 
   function fetchBatch() {
-    if (ALBUM_ID) {
-      return api('/albums/' + ALBUM_ID).then(function (r) { return r.json(); }).then(function (a) { return shuffle(images(a.assets)); });
-    }
-    return api('/search/random', { size: BATCH, type: 'IMAGE' }).then(function (r) { return r.json(); })
-      .then(function (res) { return images(Array.isArray(res) ? res : (res.assets && res.assets.items) || []); });
+    var q = '?albumId=' + ALBUM_ID;
+    return api('/timeline/buckets' + q).then(function (r) { return r.json(); }).then(function (buckets) {
+      return Promise.all(buckets.map(function (k) {
+        return api('/timeline/bucket' + q + '&timeBucket=' + encodeURIComponent(k.timeBucket)).then(function (r) { return r.json(); });
+      }));
+    }).then(function (all) {
+      var list = [];
+      all.forEach(function (b) { list = list.concat(images(b)); });
+      return shuffle(list);
+    });
   }
 
   function shuffle(a) {
